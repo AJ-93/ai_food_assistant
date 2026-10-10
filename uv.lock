@@ -17,6 +17,7 @@ dependencies = [
     { name = "pillow" },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -26,6 +27,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=12.3.0" },
     { name = "pydantic", specifier = ">=2.14.0" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [[package]]
