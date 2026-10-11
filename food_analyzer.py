@@ -3,7 +3,6 @@ import io
 import json
 import os
 
-import yaml
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
