@@ -54,7 +54,7 @@ def save_meal_data(foods, notes=""):
                     log_id,
                     food.food_name,
                     food.quantity_g,
-                    food.calories,
+                    food.calories_g,
                     food.protein_g,
                     food.carbs_g,
                     food.fat_g,

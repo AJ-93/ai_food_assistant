@@ -1,3 +1,5 @@
+import logging
+
 import gradio as gr
 import pandas as pd
 
@@ -9,26 +11,29 @@ from database import(
 from food_analyzer import analyze_food
 from models import Fooditem
 
+logger = logging.getLogger(__name__)
+
 # create tables if it does not exist
 run_ddl()
 
 def analyze_image(image_path):
     if not image_path:
-        return None, "upload image first"
+        return None, pd.DataFrame(), "upload image first"
 
     try:
         result = analyze_food(image_path)
         foods = [food.model_dump() for food in result.foods]
         if not foods:
-            return None, "No food identified, upload image again, or try another image"
+            return None, pd.DataFrame(), "No food identified, upload image again, or try another image"
 
         dataframe = pd.DataFrame(foods)
-        return{
+        return {
             "foods": foods,
             "notes": result.notes,
-        }, dataframe
-    except Exception:
-        return None, "Analysis failed"
+        }, dataframe, "Analysis complete"
+    except Exception as e:
+        logger.exception("analyze_image failed")
+        return None, pd.DataFrame(), f"Analysis failed: {e}"
 
 def save_reviewed_meal_info(data, edited_foods):
     if not data or not data.get("foods"):
@@ -70,17 +75,18 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
         )
         analyze_button=gr.Button("Analyze Meal", variant="primary")
 
-        food_table: gr.DataFrame(
+        food_table= gr.DataFrame(
             headers=[
                 "food_name",
                 "quantity_g",
-                "calories",
+                "calories_g",
                 "protein_g",
                 "carbs_g",
                 "fat_g",
             ],
             datatype=[
-                "str", "number", "number", "number", "number", "number"
+                "str", "number", "number",
+                "number", "number", "number",
             ],
             interactive=True,
             label="Review and edit nutrition estimates",
@@ -92,7 +98,7 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
         interactive=False,
         )
 
-        analyze_button.click(fn=analyze_image, inputs=image_input, outputs=[analysis_state, food_table] )
+        analyze_button.click(fn=analyze_image, inputs=image_input, outputs=[analysis_state, food_table, status])
         save_button.click(fn=save_reviewed_meal_info, inputs=[analysis_state, food_table], outputs=status)
 
     with gr.Tab("Meal History"):
@@ -103,5 +109,6 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
         )
         history_button.click(fn=show_meal_history, outputs=history_table)
 
-if __name__ == 'main':
+if __name__ == "__main__":
+    show_meal_history()
     ui.launch()

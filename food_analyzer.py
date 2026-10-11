@@ -31,10 +31,10 @@ def analyze_food(image_path: str):
 
         buffer = io.BytesIO()
         f.save(buffer, format='JPEG', quality=85)
-        encoded = base64.b64encode(buffer.getvalue().decode('utf-8'))
+        encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
         response = client.chat.completions.create(
-            MODEL=MODEL,
+            model=MODEL,
             messages=[
                 {
                     "role": "system",
