@@ -1,0 +1,14 @@
+database.py
+  h_84d579ab98e41f 2,5-6,89-177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "abdc8e7c5e8546305413ae4e382645e980957ef7",
+  "prompts": {},
+  "humans": {
+    "h_84d579ab98e41f": {
+      "author": "AJ-93 <kc.ajay1993@gmail.com>"
+    }
+  }
+}
