@@ -6,6 +6,7 @@ dependencies = [
     "gradio>=6.30.0",
     "openai>=3.28.0",
     "pillow>=12.3.0",
+    "plotly>=7.1.0",
     "pydantic>=2.14.0",
     "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
