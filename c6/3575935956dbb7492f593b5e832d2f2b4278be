@@ -1,0 +1,14 @@
+app.py
+  h_84d579ab98e41f 2,6,11-14,68-109,159-251
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "c63575935956dbb7492f593b5e832d2f2b4278be",
+  "prompts": {},
+  "humans": {
+    "h_84d579ab98e41f": {
+      "author": "AJ-93 <kc.ajay1993@gmail.com>"
+    }
+  }
+}
