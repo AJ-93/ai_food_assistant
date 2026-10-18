@@ -3,7 +3,7 @@ from datetime import date
 
 import gradio as gr
 import pandas as pd
-import plotly as px
+import plotly.express as px
 
 from database import(
     run_ddl,
@@ -79,25 +79,18 @@ def dashboard_refresh(target_date, period, calorie_goal, protein_goal, carbs_goa
     fig = px.line(
         trend,
         x="day",
-        y="calories_g",
+        y="calories",
         markers=True,
         title= "Daily Nutrition for last {days} days".format(days=days),
         labels={
             "day": "date",
-            "calories_g": "calories (kcal)",
+            "calories": "calories (kcal)",
         }
     )
 
     fig.update_layout(hovermode="x unified")
 
     meals = get_meals_for_date(target_date)
-
-    goals = {
-        "Calories": (total_nutrition["calories"], calorie_goal, "kcal"),
-        "Protein": (total_nutrition["protein_g"], protein_goal, "g"),
-        "Carbohydrates": (total_nutrition["carbs_g"], carbs_goal, "g"),
-        "Fat": (total_nutrition["fat_g"], fats_goal, "g"),
-    }
 
     return (
         f"{total_nutrition['calories']:.0f} kcal",
@@ -188,13 +181,7 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
         carbs_output = gr.Textbox(label="Carbohydrates", interactive=False)
         fat_output = gr.Textbox(label="Fat", interactive=False)
 
-    with gr.Row():
-        with gr.Column():
-            gr.Markdown("### Goal progress")
-            goal_progress = gr.Markdown()
-
-        with gr.Column():
-            calories_chart = gr.Plot(label="Calorie trend")
+    calories_chart = gr.Plot(label="Calorie trend")
 
     gr.Markdown("### Meals logged on this date")
     meal_history = gr.Dataframe(
@@ -217,7 +204,6 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
         protein_output,
         carbs_output,
         fat_output,
-        goal_progress,
         calories_chart,
         meal_history,
     ]

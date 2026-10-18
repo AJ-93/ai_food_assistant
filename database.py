@@ -133,7 +133,8 @@ def get_daily_trend(days: int = 7) -> pd.DataFrame:
             GROUP BY date(l.logged_at)
             ORDER BY day
             """,
-            (start_date.isoformat(), end_date.isoformat()),
+            conn,
+            params=(start_date.isoformat(), end_date.isoformat()),
             parse_dates=["day"],
         )
 
@@ -173,5 +174,6 @@ def get_meals_for_date(target_date: str) -> pd.DataFrame:
             GROUP BY l.id, l.logged_at, l.notes
             ORDER BY l.logged_at DESC
             """,
-            (target_date,),
+            conn,
+            params=(target_date,),
         )
