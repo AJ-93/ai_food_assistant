@@ -1,12 +1,17 @@
 import logging
+from datetime import date
 
 import gradio as gr
 import pandas as pd
+import plotly as px
 
 from database import(
     run_ddl,
     get_meal_data,
-    save_meal_data
+    save_meal_data,
+    get_daily_nutrition,
+    get_daily_trend,
+    get_meals_for_date
 )
 from food_analyzer import analyze_food
 from models import Fooditem
@@ -60,6 +65,48 @@ def show_meal_history():
 
     return pd.DataFrame(dict(row) for row in rows)
 
+def dashboard_refresh(target_date, period, calorie_goal, protein_goal, carbs_goal, fats_goal):
+    try:
+        date.fromisoformat(target_date)
+    except Exception as e:
+        raise gr.Error("Enter a valid date in YYYY-MM-DD format")
+
+    total_nutrition = get_daily_nutrition(target_date)
+
+    days = int(period)
+    trend = get_daily_trend(days)
+
+    fig = px.line(
+        trend,
+        x="day",
+        y="calories_g",
+        markers=True,
+        title= "Daily Nutrition for last {days} days".format(days=days),
+        labels={
+            "day": "date",
+            "calories_g": "calories (kcal)",
+        }
+    )
+
+    fig.update_layout(hovermode="x unified")
+
+    meals = get_meals_for_date(target_date)
+
+    goals = {
+        "Calories": (total_nutrition["calories"], calorie_goal, "kcal"),
+        "Protein": (total_nutrition["protein_g"], protein_goal, "g"),
+        "Carbohydrates": (total_nutrition["carbs_g"], carbs_goal, "g"),
+        "Fat": (total_nutrition["fat_g"], fats_goal, "g"),
+    }
+
+    return (
+        f"{total_nutrition['calories']:.0f} kcal",
+        f"{total_nutrition['protein_g']:.1f} g",
+        f"{total_nutrition['carbs_g']:.1f} g",
+        f"{total_nutrition['fat_g']:.1f} g",
+        fig,
+        meals,
+    )
 
 # building gradio UI
 with gr.Blocks(title="Visual Food Assistant") as ui:
@@ -108,6 +155,99 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
             interactive=False,
         )
         history_button.click(fn=show_meal_history, outputs=history_table)
+
+    with gr.Tab("Dashboard"):
+        gr.Markdown("# Nutrition Dashboard")
+        gr.Markdown("Review your daily nutrition")
+
+        with gr.Row():
+            dashboard_date = gr.Textbox(
+                label= "Date",
+                value=str(date.today()),
+                placeholder="Enter a date in YYYY-MM-DD format",
+            )
+            trend_period = gr.Dropdown(
+                choices=["7","30"],
+                value="7",
+                label="trend period",
+            )
+
+    gr.Markdown("### Daily nutrition goals")
+
+    with gr.Row():
+        calorie_goal = gr.Number(label="Calories (kcal)", value=2000, minimum=1)
+        protein_goal = gr.Number(label="Protein (g)", value=120, minimum=1)
+        carbs_goal = gr.Number(label="Carbohydrates (g)", value=250, minimum=1)
+        fat_goal = gr.Number(label="Fat (g)", value=65, minimum=1)
+
+    refresh_button = gr.Button("Refresh dashboard", variant="primary")
+
+    with gr.Row():
+        calories_output = gr.Textbox(label="Daily calories", interactive=False)
+        protein_output = gr.Textbox(label="Protein", interactive=False)
+        carbs_output = gr.Textbox(label="Carbohydrates", interactive=False)
+        fat_output = gr.Textbox(label="Fat", interactive=False)
+
+    with gr.Row():
+        with gr.Column():
+            gr.Markdown("### Goal progress")
+            goal_progress = gr.Markdown()
+
+        with gr.Column():
+            calories_chart = gr.Plot(label="Calorie trend")
+
+    gr.Markdown("### Meals logged on this date")
+    meal_history = gr.Dataframe(
+        headers=[
+            "meal_id",
+            "logged_at",
+            "notes",
+            "foods",
+            "calories",
+            "protein_g",
+            "carbs_g",
+            "fat_g",
+        ],
+        interactive=False,
+        label="Meal history",
+    )
+
+    dashboard_outputs = [
+        calories_output,
+        protein_output,
+        carbs_output,
+        fat_output,
+        goal_progress,
+        calories_chart,
+        meal_history,
+    ]
+
+    refresh_button.click(
+        fn=dashboard_refresh,
+        inputs=[
+            dashboard_date,
+            trend_period,
+            calorie_goal,
+            protein_goal,
+            carbs_goal,
+            fat_goal,
+        ],
+        outputs=dashboard_outputs,
+    )
+
+    # Load dashboard data when the app starts.
+    ui.load(
+        fn=dashboard_refresh,
+        inputs=[
+            dashboard_date,
+            trend_period,
+            calorie_goal,
+            protein_goal,
+            carbs_goal,
+            fat_goal,
+        ],
+        outputs=dashboard_outputs,
+    )
 
 if __name__ == "__main__":
     show_meal_history()
