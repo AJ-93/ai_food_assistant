@@ -1,0 +1,20 @@
+food_analyzer.py
+  h_84d579ab98e41f 5,13-18,22,24,26-32,39-40,44-98,140-174
+prompts/system_voice.txt.j2
+  h_84d579ab98e41f 1-17
+prompts/user_voice.txt.j2
+  h_84d579ab98e41f 1-4
+configration.yaml
+  h_84d579ab98e41f 2-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "a0290a02cade9302828903f198c9740f58ae49b7",
+  "prompts": {},
+  "humans": {
+    "h_84d579ab98e41f": {
+      "author": "AJ-93 <kc.ajay1993@gmail.com>"
+    }
+  }
+}
