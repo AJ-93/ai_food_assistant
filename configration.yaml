@@ -1,2 +1,3 @@
 LLM_Config:
   MODEL: gpt-4.1-mini
+  VOICE_MODEL: openai/whisper-large-v3-turbo
