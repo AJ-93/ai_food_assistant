@@ -4,6 +4,7 @@ import json
 import os
 import torch
 
+from functools import lru_cache
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -36,11 +37,13 @@ load_dotenv()
 config = load_config(PATH_TO_CONFIG)
 
 client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
-MODEL = config['LLM_Config']['IMAGE_MODEL']
+MODEL = config['LLM_Config']['MODEL']
 VOICE_MODEL = config['LLM_Config']['VOICE_MODEL']
 SYSTEM_PROMPT = SYS_PROMPT_PATH.read_text(encoding="utf-8")
 USER_PROMPT = USER_PROMPT_PATH.read_text(encoding="utf-8")
+VOICE_SYSTEM_PROMPT = VOICE_SYS_PROMPT_PATH.read_text(encoding="utf-8")
 
+@lru_cache(maxsize=1)
 def get_transcriber_model():
 
     if torch.cuda.is_available():
@@ -57,7 +60,7 @@ def get_transcriber_model():
         torch_dtype = torch.float32
 
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        MODEL_ID=VOICE_MODEL,
+        VOICE_MODEL,
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=True,
         use_safetensors=True,
@@ -65,7 +68,7 @@ def get_transcriber_model():
 
     model.to(device)
 
-    processor = AutoProcessor.from_pretrained(ModelID=VOICE_MODEL)
+    processor = AutoProcessor.from_pretrained(VOICE_MODEL)
 
     _transcriber = pipeline(
         "automatic-speech-recognition",
@@ -142,14 +145,14 @@ def analyze_food_audio(description: str):
     if not description or not description.strip():
         raise ValueError("Empty description provided")
 
-    VOICE_USER_PROMPT = TEMPLATE_VOICE_USER_PROMPT.render(description)
+    VOICE_USER_PROMPT = TEMPLATE_VOICE_USER_PROMPT.render(description=description)
 
     response = client.chat.completions.create(
         model=MODEL,
         messages=[
             {
                 "role": "system",
-                "content": VOICE_SYS_PROMPT_PATH,
+                "content": VOICE_SYSTEM_PROMPT,
             },
             {
                 "role": "user",

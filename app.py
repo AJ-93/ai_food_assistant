@@ -21,12 +21,32 @@ logger = logging.getLogger(__name__)
 # create tables if it does not exist
 run_ddl()
 
+def analyze_voice(audio_path):
+    if not audio_path:
+        raise gr.Error("No audio file provided")
+
+    analysis = analyze_food(audio_path, input_type="voice")
+
+    food_df = pd.DataFrame(
+        [food.model_dump() for food in analysis.foods],
+        columns=[
+            "food_name",
+            "quantity_g",
+            "calories",
+            "protein_g",
+            "carbs_g",
+            "fat_g",
+        ],
+    )
+    return analysis, food_df
+
+
 def analyze_image(image_path):
     if not image_path:
         return None, pd.DataFrame(), "upload image first"
 
     try:
-        result = analyze_food(image_path)
+        result = analyze_food(image_path, input_type="image")
         foods = [food.model_dump() for food in result.foods]
         if not foods:
             return None, pd.DataFrame(), "No food identified, upload image again, or try another image"
@@ -57,6 +77,14 @@ def save_reviewed_meal_info(data, edited_foods):
         return "Meal successfully saved, Meal_ID: {}".format(meal_id)
     except Exception as e:
         return f"Meal info save failed: {e}"
+
+def save_voice_meal_info(analysis):
+    if not analysis:
+        raise gr.Error("Analyze a recording before saving.")
+
+    meal_id = save_meal_data(analysis.foods, analysis.notes)
+
+    return "Meal successfully saved, Meal_ID: {}".format(meal_id)
 
 def show_meal_history():
     rows = get_meal_data()
@@ -104,7 +132,7 @@ def dashboard_refresh(target_date, period, calorie_goal, protein_goal, carbs_goa
 # building gradio UI
 with gr.Blocks(title="Visual Food Assistant") as ui:
     gr.Markdown("# Visual Food and Meal Planning Assistant")
-    gr.Markdown("Upload an image and get the nutritional information")
+    gr.Markdown("Upload an image or describe the food and get the nutritional information")
 
     analysis_state = gr.State(None)
 
@@ -132,7 +160,41 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
             label="Review and edit nutrition estimates",
         )
 
-        save_button=gr.Button("Save Reviewed Meal Info")
+        with gr.Tab("Voice logging"):
+            audio_input = gr.Audio(
+                sources=["microphone"],
+                type="filepath",
+                label="Record your meal",
+            )
+
+            analyze_voice_button=gr.Button(
+                "Analyze your voice",
+                variant="primary",
+            )
+
+            voice_analysis_state = gr.State(None)
+
+            voice_food_table = gr.DataFrame(
+                label="estimated nutrition",
+                interactive=False,
+            )
+
+            save_button_voice = gr.Button("Save Meal")
+            voice_status=gr.Markdown()
+
+            analyze_voice_button.click(
+                fn=analyze_voice,
+                inputs=[audio_input],
+                outputs=[voice_analysis_state, voice_food_table],
+            )
+
+            save_button_voice.click(
+                fn=save_voice_meal_info,
+                inputs=[voice_analysis_state],
+                outputs=[voice_status],
+            )
+
+        save_button = gr.Button("Save Reviewed Meal Info")
         status=gr.Textbox(
         label="Status",
         interactive=False,
