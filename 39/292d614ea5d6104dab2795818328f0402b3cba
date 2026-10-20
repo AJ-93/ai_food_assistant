@@ -1,0 +1,16 @@
+app.py
+  h_84d579ab98e41f 24-43,49,81-88,135,163-189,191-196
+food_analyzer.py
+  h_84d579ab98e41f 40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "39292d614ea5d6104dab2795818328f0402b3cba",
+  "prompts": {},
+  "humans": {
+    "h_84d579ab98e41f": {
+      "author": "AJ-93 <kc.ajay1993@gmail.com>"
+    }
+  }
+}
