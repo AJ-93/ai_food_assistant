@@ -21,44 +21,47 @@ logger = logging.getLogger(__name__)
 # create tables if it does not exist
 run_ddl()
 
-def analyze_voice(audio_path):
-    if not audio_path:
-        raise gr.Error("No audio file provided")
-
-    analysis = analyze_food(audio_path, input_type="voice")
-
-    food_df = pd.DataFrame(
-        [food.model_dump() for food in analysis.foods],
-        columns=[
-            "food_name",
-            "quantity_g",
-            "calories",
-            "protein_g",
-            "carbs_g",
-            "fat_g",
-        ],
-    )
-    return analysis, food_df
+FOOD_COLUMNS = [
+    "food_name",
+    "quantity_g",
+    "calories_g",
+    "protein_g",
+    "carbs_g",
+    "fat_g",
+]
 
 
-def analyze_image(image_path):
-    if not image_path:
-        return None, pd.DataFrame(), "upload image first"
+def run_analysis(input_data, input_type, empty_message):
+    """Shared by image and voice: returns (state, table, status)."""
+    if not input_data:
+        return None, pd.DataFrame(columns=FOOD_COLUMNS), empty_message
 
     try:
-        result = analyze_food(image_path, input_type="image")
+        result = analyze_food(input_data, input_type=input_type)
         foods = [food.model_dump() for food in result.foods]
         if not foods:
-            return None, pd.DataFrame(), "No food identified, upload image again, or try another image"
+            return (
+                None,
+                pd.DataFrame(columns=FOOD_COLUMNS),
+                "No food identified, try again with another image or recording",
+            )
 
-        dataframe = pd.DataFrame(foods)
+        dataframe = pd.DataFrame(foods, columns=FOOD_COLUMNS)
         return {
             "foods": foods,
             "notes": result.notes,
         }, dataframe, "Analysis complete"
     except Exception as e:
-        logger.exception("analyze_image failed")
-        return None, pd.DataFrame(), f"Analysis failed: {e}"
+        logger.exception("analysis failed (%s)", input_type)
+        return None, pd.DataFrame(columns=FOOD_COLUMNS), f"Analysis failed: {e}"
+
+
+def analyze_image(image_path):
+    return run_analysis(image_path, "image", "upload image first")
+
+
+def analyze_voice(audio_path):
+    return run_analysis(audio_path, "voice", "record your meal first")
 
 def save_reviewed_meal_info(data, edited_foods):
     if not data or not data.get("foods"):
@@ -77,14 +80,6 @@ def save_reviewed_meal_info(data, edited_foods):
         return "Meal successfully saved, Meal_ID: {}".format(meal_id)
     except Exception as e:
         return f"Meal info save failed: {e}"
-
-def save_voice_meal_info(analysis):
-    if not analysis:
-        raise gr.Error("Analyze a recording before saving.")
-
-    meal_id = save_meal_data(analysis.foods, analysis.notes)
-
-    return "Meal successfully saved, Meal_ID: {}".format(meal_id)
 
 def show_meal_history():
     rows = get_meal_data()
@@ -137,21 +132,28 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
     analysis_state = gr.State(None)
 
     with gr.Tab("Analyze Meal"):
-        image_input=gr.Image(
-            type="filepath",
-            label="Upload your meal image",
+        gr.Markdown(
+            "You can choose whether to upload an image or describe the food to get the nutritional information",
         )
-        analyze_button=gr.Button("Analyze Meal", variant="primary")
+        with gr.Tabs():
+            with gr.Tab("Image"):
+                image_input = gr.Image(
+                    type="filepath",
+                    label="Upload your meal image",
+                )
+                analyze_button = gr.Button("Analyze Meal", variant="primary")
 
-        food_table= gr.DataFrame(
-            headers=[
-                "food_name",
-                "quantity_g",
-                "calories_g",
-                "protein_g",
-                "carbs_g",
-                "fat_g",
-            ],
+            with gr.Tab("Voice"):
+                audio_input = gr.Audio(
+                    sources=["microphone"],
+                    type="filepath",
+                    label="Record your meal",
+                )
+                analyze_voice_button = gr.Button("Analyze Recording", variant="primary")
+
+        # one shared table, save button and status for both inputs
+        food_table = gr.DataFrame(
+            headers=FOOD_COLUMNS,
             datatype=[
                 "str", "number", "number",
                 "number", "number", "number",
@@ -160,47 +162,15 @@ with gr.Blocks(title="Visual Food Assistant") as ui:
             label="Review and edit nutrition estimates",
         )
 
-        with gr.Tab("Voice logging"):
-            audio_input = gr.Audio(
-                sources=["microphone"],
-                type="filepath",
-                label="Record your meal",
-            )
-
-            analyze_voice_button=gr.Button(
-                "Analyze your voice",
-                variant="primary",
-            )
-
-            voice_analysis_state = gr.State(None)
-
-            voice_food_table = gr.DataFrame(
-                label="estimated nutrition",
-                interactive=False,
-            )
-
-            save_button_voice = gr.Button("Save Meal")
-            voice_status=gr.Markdown()
-
-            analyze_voice_button.click(
-                fn=analyze_voice,
-                inputs=[audio_input],
-                outputs=[voice_analysis_state, voice_food_table],
-            )
-
-            save_button_voice.click(
-                fn=save_voice_meal_info,
-                inputs=[voice_analysis_state],
-                outputs=[voice_status],
-            )
-
         save_button = gr.Button("Save Reviewed Meal Info")
-        status=gr.Textbox(
-        label="Status",
-        interactive=False,
+        status = gr.Textbox(
+            label="Status",
+            interactive=False,
         )
 
-        analyze_button.click(fn=analyze_image, inputs=image_input, outputs=[analysis_state, food_table, status])
+        shared_outputs = [analysis_state, food_table, status]
+        analyze_button.click(fn=analyze_image, inputs=image_input, outputs=shared_outputs)
+        analyze_voice_button.click(fn=analyze_voice, inputs=audio_input, outputs=shared_outputs)
         save_button.click(fn=save_reviewed_meal_info, inputs=[analysis_state, food_table], outputs=status)
 
     with gr.Tab("Meal History"):
