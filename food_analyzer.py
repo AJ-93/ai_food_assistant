@@ -102,7 +102,7 @@ def analyze_food_image(image_path: str):
     with Image.open(image_path) as f:
         f = f.convert('RGB')
 
-        f.thumbnail((1600, 1600))
+        f.thumbnail((500, 500))
 
         buffer = io.BytesIO()
         f.save(buffer, format='JPEG', quality=85)
