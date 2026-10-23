@@ -1,0 +1,14 @@
+food_analyzer.py
+  h_84d579ab98e41f 105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ccba058586d94602bf99e6e933e9a2da114b61be",
+  "prompts": {},
+  "humans": {
+    "h_84d579ab98e41f": {
+      "author": "AJ-93 <kc.ajay1993@gmail.com>"
+    }
+  }
+}
