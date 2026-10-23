@@ -68,7 +68,6 @@ The dashboard uses saved meal records to provide:
 | Data validation | Pydantic |
 | Database | SQLite |
 | Data processing | pandas |
-| Model acceleration | PyTorch |
 
 
 ## Usage
