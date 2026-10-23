@@ -1,0 +1,14 @@
+README.md
+  h_84d579ab98e41f 1-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "20fa2e15d505bad216480c31c22bf1cdcab6cb1f",
+  "prompts": {},
+  "humans": {
+    "h_84d579ab98e41f": {
+      "author": "AJ-93 <kc.ajay1993@gmail.com>"
+    }
+  }
+}
