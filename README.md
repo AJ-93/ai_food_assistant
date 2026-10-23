@@ -67,7 +67,6 @@ The dashboard uses saved meal records to provide:
 | Speech recognition model | Whisper Large V3 Turbo |
 | Data validation | Pydantic |
 | Database | SQLite |
-| Data processing | pandas |
 
 
 ## Usage
